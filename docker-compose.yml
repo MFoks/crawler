@@ -1,0 +1,96 @@
+version: '3.8'
+
+services:
+  crawler-api:
+    build:
+      context: ./CrawlerAPI
+    container_name: crawler-api
+    environment:
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Set ADMIN_PASSWORD in .env}
+    ports:
+      - "8000:8000"
+    depends_on:
+      crawler:
+        condition: service_healthy
+    volumes:
+      - ./Crawler/logs:/app/logs
+      - ./CrawlerAPI/main.py:/app/main.py  # Hot reload
+    networks:
+      - app_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  crawler:
+    build:
+      context: ./Crawler
+    container_name: crawler
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./Crawler/logs:/app/logs
+      - ./Crawler/shared:/app/shared        # Hot reload shared modules
+      - ./Crawler/utils:/app/utils          # Hot reload utils
+      - ./Crawler/main.py:/app/main.py      # Hot reload main
+      - ./Crawler/app.py:/app/app.py        # Hot reload app
+    networks:
+      - app_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  frontend:
+    build:
+      context: ./front-crawler
+    container_name: frontend
+    expose:
+      - "3000"
+    depends_on:
+      crawler-api:
+        condition: service_healthy
+    networks:
+      - app_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  nginx:
+    build:
+      context: ./nginx
+    container_name: reverse-proxy
+    ports:
+      - "3000:80"
+    depends_on:
+      frontend:
+        condition: service_healthy
+      crawler-api:
+        condition: service_healthy
+      crawler:
+        condition: service_healthy
+    networks:
+      - app_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/nginx-health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+
+networks:
+  app_network:
+    driver: bridge

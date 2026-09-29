@@ -1,0 +1,36 @@
+.DS_Store
+.idea/
+.vscode/
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*.so
+.Python
+.venv/
+venv/
+playwright_env/
+
+# Node / React
+node_modules/
+build/
+coverage/
+.pnp
+.pnp.js
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Runtime output
+logs/
+playwright_logs/
+*.log
+*.pid
+
+# Preserved metadata from the former standalone frontend repository
+front-crawler/.git.frontend-backup/

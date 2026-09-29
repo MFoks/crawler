@@ -1,0 +1,15 @@
+playwright_env/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+logs/
+*.log
+.git/
+.gitignore
+*.md
+.DS_Store
+.env
+.venv/
+venv/
